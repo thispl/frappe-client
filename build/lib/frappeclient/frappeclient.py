@@ -1,45 +1,35 @@
 import requests
 import json
 
-from urllib.parse import quote
 
 try:
 	from StringIO import StringIO
 except:
-	from io import StringIO
+	from IO import StringIO
 
 try:
     unicode
 except NameError:
     unicode = str
 
-
 class AuthError(Exception):
 	pass
 
-
 class FrappeException(Exception):
 	pass
-
 
 class NotUploadableException(FrappeException):
 	def __init__(self, doctype):
 		self.message = "The doctype `{1}` is not uploadable, so you can't download the template".format(doctype)
 
-
 class FrappeClient(object):
-	def __init__(self, url=None, username=None, password=None, api_key=None, api_secret=None, verify=True):
+	def __init__(self, url=None, username=None, password=None, verify=True):
 		self.headers = dict(Accept='application/json')
 		self.session = requests.Session()
 		self.can_download = []
 		self.verify = verify
 		self.url = url
-
-		if username and password:
-			self.login(username, password)
-
-		if api_key and api_secret:
-			self.authenticate(api_key, api_secret)
+		self.login(username, password)
 
 	def __enter__(self):
 		return self
@@ -60,18 +50,13 @@ class FrappeClient(object):
 		else:
 			raise AuthError
 
-	def authenticate(self, api_key, api_secret):
-		token = b64encode('{}:{}'.format(api_key, api_secret))
-		auth_header = {'Authorization': 'Basic {}'.format(token)}
-		self.session.headers.update(auth_header)
-
 	def logout(self):
 		self.session.get(self.url, params={
 			'cmd': 'logout',
 		})
 
 	def get_list(self, doctype, fields='"*"', filters=None, limit_start=0, limit_page_length=0, order_by=None):
-		'''Returns list of records of a particular type'''
+		"""Returns list of records of a particular type"""
 		if not isinstance(fields, unicode):
 			fields = json.dumps(fields)
 		params = {
@@ -93,7 +78,7 @@ class FrappeClient(object):
 		'''Insert a document to the remote server
 
 		:param doc: A dict or Document object to be inserted remotely'''
-		res = self.session.post(self.url + "/api/resource/" + quote(doc.get("doctype")),
+		res = self.session.post(self.url + "/api/resource/" + doc.get("doctype"),
 			data={"data":json.dumps(doc)})
 		return self.post_process(res)
 
@@ -110,7 +95,7 @@ class FrappeClient(object):
 		'''Update a remote document
 
 		:param doc: dict or Document object to be updated remotely. `name` is mandatory for this'''
-		url = self.url + "/api/resource/" + quote(doc.get("doctype")) + "/" + quote(doc.get("name"))
+		url = self.url + "/api/resource/" + doc.get("doctype") + "/" + doc.get("name")
 		res = self.session.put(url, data={"data":json.dumps(doc)})
 		return self.post_process(res)
 
@@ -119,8 +104,8 @@ class FrappeClient(object):
 
 		:param docs: List of dict or Document objects to be updated remotely (by `name`)'''
 		return self.post_request({
-			'cmd': 'frappe.client.bulk_update',
-			'docs': json.dumps(docs)
+			"cmd": "frappe.client.bulk_update",
+			"docs": json.dumps(docs)
 		})
 
 	def delete(self, doctype, name):
@@ -129,9 +114,9 @@ class FrappeClient(object):
 		:param doctype: `doctype` to be deleted
 		:param name: `name` of document to be deleted'''
 		return self.post_request({
-			'cmd': 'frappe.client.delete',
-			'doctype': doctype,
-			'name': name
+			"cmd": "frappe.client.delete",
+			"doctype": doctype,
+			"name": name
 		})
 
 	def submit(self, doclist):
@@ -139,32 +124,32 @@ class FrappeClient(object):
 
 		:param doc: dict or Document object to be submitted remotely'''
 		return self.post_request({
-			'cmd': 'frappe.client.submit',
-			'doclist': json.dumps(doclist)
+			"cmd": "frappe.client.submit",
+			"doclist": json.dumps(doclist)
 		})
 
 	def get_value(self, doctype, fieldname=None, filters=None):
 		return self.get_request({
-			'cmd': 'frappe.client.get_value',
-			'doctype': doctype,
-			'fieldname': fieldname or 'name',
-			'filters': json.dumps(filters)
+			"cmd": "frappe.client.get_value",
+			"doctype": doctype,
+			"fieldname": fieldname or "name",
+			"filters": json.dumps(filters)
 		})
 
 	def set_value(self, doctype, docname, fieldname, value):
 		return self.post_request({
-			'cmd': 'frappe.client.set_value',
-			'doctype': doctype,
-			'name': docname,
-			'fieldname': fieldname,
-			'value': value
+			"cmd": "frappe.client.set_value",
+			"doctype": doctype,
+			"name": docname,
+			"fieldname": fieldname,
+			"value": value
 		})
 
 	def cancel(self, doctype, name):
 		return self.post_request({
-			'cmd': 'frappe.client.cancel',
-			'doctype': doctype,
-			'name': name
+			"cmd": "frappe.client.cancel",
+			"doctype": doctype,
+			"name": name
 		})
 
 	def get_doc(self, doctype, name="", filters=None, fields=None):
@@ -180,8 +165,8 @@ class FrappeClient(object):
 		if fields:
 			params["fields"] = json.dumps(fields)
 
-		res = self.session.get(self.url + '/api/resource/' + doctype + '/' + name,
-							   params=params)
+		res = self.session.get(self.url + "/api/resource/" + doctype + "/" + name,
+			params=params)
 
 		return self.post_process(res)
 
@@ -192,14 +177,14 @@ class FrappeClient(object):
 		:param old_name: Current `name` of the document to be renamed
 		:param new_name: New `name` to be set'''
 		params = {
-			'cmd': 'frappe.client.rename_doc',
-			'doctype': doctype,
-			'old_name': old_name,
-			'new_name': new_name
+			"cmd": "frappe.client.rename_doc",
+			"doctype": doctype,
+			"old_name": old_name,
+			"new_name": new_name
 		}
 		return self.post_request(params)
 
-	def get_pdf(self, doctype, name, print_format='Standard', letterhead=True):
+	def get_pdf(self, doctype, name, print_format="Standard", letterhead=True):
 		params = {
 			'doctype': doctype,
 			'name': name,
@@ -207,12 +192,12 @@ class FrappeClient(object):
 			'no_letterhead': int(not bool(letterhead))
 		}
 		response = self.session.get(
-			self.url + '/api/method/frappe.templates.pages.print.download_pdf',
+			self.url + "/api/method/frappe.templates.pages.print.download_pdf",
 			params=params, stream=True)
 
 		return self.post_process_file_stream(response)
 
-	def get_html(self, doctype, name, print_format='Standard', letterhead=True):
+	def get_html(self, doctype, name, print_format="Standard", letterhead=True):
 		params = {
 			'doctype': doctype,
 			'name': name,
@@ -241,18 +226,19 @@ class FrappeClient(object):
 			'all_doctypes': 'Yes'
 		}
 
-		request = self.session.get(
-			self.url + '/api/method/frappe.core.page.data_import_tool.exporter.get_template',
-			params=params
-		)
+		request = self.session.get(self.url +
+			'/api/method/frappe.core.page.data_import_tool.exporter.get_template',
+			params=params)
 		return self.post_process_file_stream(request)
 
 	def get_api(self, method, params={}):
-		res = self.session.get(self.url + '/api/method/' + method + '/', params=params)
+		res = self.session.get(self.url + "/api/method/" + method + "/",
+			params=params)
 		return self.post_process(res)
 
 	def post_api(self, method, params={}):
-		res = self.session.post(self.url + '/api/method/' + method + '/', params=params)
+		res = self.session.post(self.url + "/api/method/" + method + "/",
+			params=params)
 		return self.post_process(res)
 
 	def get_request(self, params):
@@ -266,7 +252,7 @@ class FrappeClient(object):
 		return res
 
 	def preprocess(self, params):
-		'''convert dicts, lists to json'''
+		"""convert dicts, lists to json"""
 		for key, value in params.iteritems():
 			if isinstance(value, (dict, list)):
 				params[key] = json.dumps(value)
@@ -280,8 +266,8 @@ class FrappeClient(object):
 			print(response.text)
 			raise
 
-		if rjson and ('exc' in rjson) and rjson['exc']:
-			raise FrappeException(rjson['exc'])
+		if rjson and ("exc" in rjson) and rjson["exc"]:
+			raise FrappeException(rjson["exc"])
 		if 'message' in rjson:
 			return rjson['message']
 		elif 'data' in rjson:
@@ -300,11 +286,11 @@ class FrappeClient(object):
 			try:
 				rjson = response.json()
 			except ValueError:
-				print(response.text)
+				print response.text
 				raise
 
-			if rjson and ('exc' in rjson) and rjson['exc']:
-				raise FrappeException(rjson['exc'])
+			if rjson and ("exc" in rjson) and rjson["exc"]:
+				raise FrappeException(rjson["exc"])
 			if 'message' in rjson:
 				return rjson['message']
 			elif 'data' in rjson:
